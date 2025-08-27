@@ -5,6 +5,21 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@/components/*": [
+        "./src/presentation/components/*",
+        "./components/*"
+      ],
+      "@/hooks/*": [
+        "./src/shared/utils/*",
+        "./hooks/*"
+      ],
+      "@/constants/*": [
+        "./src/shared/constants/*",
+        "./constants/*"
+      ],
+      "@/assets/*": [
+        "./assets/*"
       ]
     }
   },
