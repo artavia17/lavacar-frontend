@@ -76,7 +76,11 @@ export const ProfileScreen: React.FC = () => {
         <Text style={styles.title}>Mi Perfil</Text>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* User Info */}
         <View style={styles.userInfo}>
           <View style={styles.avatar}>
@@ -151,6 +155,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+  },
+  scrollContent: {
+    paddingBottom: 100, // Space for tab bar
   },
   userInfo: {
     flexDirection: 'row',

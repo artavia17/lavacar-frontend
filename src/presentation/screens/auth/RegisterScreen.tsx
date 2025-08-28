@@ -49,6 +49,9 @@ export const RegisterScreen: React.FC = () => {
   
   const [loading, setLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
+  const [isScrolledTop, setIsScrolledTop] = useState(true);
+  const [isScrolledBottom, setIsScrolledBottom] = useState(true);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
@@ -285,6 +288,19 @@ export const RegisterScreen: React.FC = () => {
     setPhone(formatted);
   };
 
+  const handleScroll = (event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const currentScrollY = contentOffset.y;
+    setScrollY(currentScrollY);
+    
+    // Check if scrolled from top
+    setIsScrolledTop(currentScrollY <= 10);
+    
+    // Check if scrolled to bottom
+    const isAtBottom = currentScrollY + layoutMeasurement.height >= contentSize.height - 10;
+    setIsScrolledBottom(isAtBottom);
+  };
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
@@ -333,7 +349,10 @@ export const RegisterScreen: React.FC = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[
+        styles.header,
+        !isScrolledTop && styles.headerWithBorder
+      ]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <ChevronLeftIcon size={24} color="#1A1A1A" />
         </TouchableOpacity>
@@ -351,6 +370,8 @@ export const RegisterScreen: React.FC = () => {
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         <View style={styles.content}>
           <Text style={styles.title}>Create account</Text>
@@ -563,6 +584,7 @@ export const RegisterScreen: React.FC = () => {
       {/* Fixed Footer Button */}
       <View style={[
         styles.fixedFooter,
+        !isScrolledBottom && styles.footerWithBorder,
         keyboardHeight > 0 && { bottom: keyboardHeight + 40 }
       ]}>
         <TouchableOpacity
@@ -595,6 +617,11 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
+    backgroundColor: '#FFFFFF',
+  },
+  headerWithBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E9EA',
   },
   backButton: {
     width: 40,
@@ -677,8 +704,12 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
-    paddingTop: 0,
-    paddingBottom: 30,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  footerWithBorder: {
+    borderTopWidth: 1,
+    borderTopColor: '#E8E9EA',
   },
   actionButton: {
     height: 56,

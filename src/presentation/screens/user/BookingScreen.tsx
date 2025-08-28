@@ -13,13 +13,14 @@ export const BookingScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Solicitar Servicio</Text>
-      </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header Title */}
+        <Text style={styles.title}>Solicitar Servicio</Text>
         {/* Service Selection */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Selecciona tu servicio</Text>
@@ -85,19 +86,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
   title: {
     fontSize: 24,
     fontFamily: 'Poppins-Bold',
     color: '#1A1A1A',
+    marginBottom: 32,
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
+  },
+  scrollContent: {
+    paddingTop: 20,
+    paddingBottom: 100, // Space for tab bar
   },
   section: {
     marginBottom: 32,

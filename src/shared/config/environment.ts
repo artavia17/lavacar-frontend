@@ -45,8 +45,9 @@ export const API_ENDPOINTS = {
   USER_BOOKINGS: '/user/bookings',
   
   // Vehicle endpoints
-  USER_VEHICLES: '/user/vehicles',
-  ADD_VEHICLE: '/user/vehicles',
+  USER_VEHICLES: '/account/vehicles',
+  PRIMARY_VEHICLE: '/account/vehicles/primary',
+  CREATE_VEHICLE: '/account/vehicles',
   UPDATE_VEHICLE: '/user/vehicles',
   
   // Public vehicle data endpoints

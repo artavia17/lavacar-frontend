@@ -25,6 +25,9 @@ export const EmailLoginScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [userType, setUserType] = useState<'agent' | 'user'>('user');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
+  const [isScrolledTop, setIsScrolledTop] = useState(true);
+  const [isScrolledBottom, setIsScrolledBottom] = useState(true);
   const { alert } = useAlert();
 
   useEffect(() => {
@@ -127,12 +130,28 @@ export const EmailLoginScreen: React.FC = () => {
     setShowPassword(!showPassword);
   };
 
+  const handleScroll = (event: any) => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    const currentScrollY = contentOffset.y;
+    setScrollY(currentScrollY);
+    
+    // Check if scrolled from top
+    setIsScrolledTop(currentScrollY <= 10);
+    
+    // Check if scrolled to bottom
+    const isAtBottom = currentScrollY + layoutMeasurement.height >= contentSize.height - 10;
+    setIsScrolledBottom(isAtBottom);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[
+        styles.header,
+        !isScrolledTop && styles.headerWithBorder
+      ]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <ChevronLeftIcon size={24} color="#1A1A1A" />
         </TouchableOpacity>
@@ -150,6 +169,8 @@ export const EmailLoginScreen: React.FC = () => {
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         <View style={styles.content}>
         <Text style={styles.title}>Log in</Text>
@@ -272,6 +293,7 @@ export const EmailLoginScreen: React.FC = () => {
       {/* Footer */}
       <View style={[
         styles.footer,
+        !isScrolledBottom && styles.footerWithBorder,
         keyboardHeight > 0 && { 
           position: 'absolute',
           bottom: keyboardHeight + 30,
@@ -307,6 +329,11 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
+    backgroundColor: '#FFFFFF',
+  },
+  headerWithBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8E9EA',
   },
   backButton: {
     width: 40,
@@ -422,6 +449,11 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
     paddingTop: 20,
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  footerWithBorder: {
+    borderTopWidth: 1,
+    borderTopColor: '#E8E9EA',
   },
   footerText: {
     fontSize: 16,

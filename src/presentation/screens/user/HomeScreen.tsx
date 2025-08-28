@@ -6,30 +6,34 @@ import {
   Text,
   TouchableOpacity,
   View,
-  Image,
   Dimensions,
 } from 'react-native';
-import { Bars3Icon } from 'react-native-heroicons/outline';
+import { NotificationPermissionModal } from '../../components/common/NotificationPermissionModal';
+import { useInitialNotificationPermission } from '../../hooks/useInitialNotificationPermission';
+import { useTabScroll } from '../../contexts/TabScrollContext';
 
 const { width } = Dimensions.get('window');
 
 export const HomeScreen: React.FC = () => {
+  const { showModal, handleAllow, handleDeny } = useInitialNotificationPermission();
+  const { setIsScrolled } = useTabScroll();
+
+  const handleScroll = (event: any) => {
+    const { contentOffset } = event.nativeEvent;
+    const currentScrollY = contentOffset.y;
+    setIsScrolled(currentScrollY > 10);
+  };
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.logo}>Logo</Text>
-        <TouchableOpacity style={styles.menuButton}>
-          <Bars3Icon size={24} color="#4285F4" />
-        </TouchableOpacity>
-      </View>
 
       {/* Content */}
       <ScrollView 
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         {/* Promoción Principal */}
         <View style={styles.mainPromo}>
@@ -121,6 +125,15 @@ export const HomeScreen: React.FC = () => {
           </ScrollView>
         </View>
       </ScrollView>
+
+      {/* Initial Notification Permission Modal */}
+      <NotificationPermissionModal
+        visible={showModal}
+        onAllow={handleAllow}
+        onDeny={handleDeny}
+        title="Mantente Informado"
+        message="Habilita las notificaciones para recibir actualizaciones importantes sobre tus servicios de lavado y ofertas especiales."
+      />
     </View>
   );
 };
@@ -130,28 +143,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-  },
-  logo: {
-    fontSize: 18,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#4285F4',
-  },
-  menuButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 20,
+    paddingBottom: 100, // Space for tab bar
   },
   mainPromo: {
     height: 200,
