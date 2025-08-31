@@ -1,10 +1,12 @@
 import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
   Image,
   Linking,
+  PanResponder,
   Platform,
   ScrollView,
   StatusBar,
@@ -16,9 +18,13 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Banner, bannerService } from '../../../infrastructure/services/BannerService';
 import { Coupon, couponService } from '../../../infrastructure/services/CouponService';
+import { Redemption, redemptionService } from '../../../infrastructure/services/RedemptionService';
 import { UserVehicle, vehicleService } from '../../../infrastructure/services/VehicleService';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { CouponModal } from '../../components/common/CouponModal';
 import { NotificationPermissionModal } from '../../components/common/NotificationPermissionModal';
+import { RedemptionModal } from '../../components/common/RedemptionModal';
+import { QRRedemptionModal } from '../../components/common/QRRedemptionModal';
 import { useTabScroll } from '../../contexts/TabScrollContext';
 import { useInitialNotificationPermission } from '../../hooks/useInitialNotificationPermission';
 import { useError } from '../../providers/ErrorProvider';
@@ -46,12 +52,131 @@ export const HomeScreen: React.FC = () => {
   
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [couponsLoading, setCouponsLoading] = useState(true);
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const [selectedCoupon, setSelectedCoupon] = useState<Coupon | null>(null);
+  
+  const [redemptions, setRedemptions] = useState<Redemption[]>([]);
+  const [redemptionsLoading, setRedemptionsLoading] = useState(true);
+  const [showRedemptionModal, setShowRedemptionModal] = useState(false);
+  const [selectedRedemption, setSelectedRedemption] = useState<Redemption | null>(null);
+  const [showQRRedemptionModal, setShowQRRedemptionModal] = useState(false);
+  
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Simple function to go to next banner
+  const nextBanner = useCallback(() => {
+    console.log('🔄 nextBanner called, current:', currentBannerIndex, 'total:', banners.length);
+    
+    if (banners.length <= 1) return;
+
+    // Fade out
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      // Change to next index
+      setCurrentBannerIndex(prev => {
+        const next = prev >= banners.length - 1 ? 0 : prev + 1;
+        console.log('➡️ Moving from', prev, 'to', next);
+        return next;
+      });
+      
+      // Fade in
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [currentBannerIndex, banners.length, fadeAnim]);
+
+  // Simple function to go to previous banner
+  const prevBanner = useCallback(() => {
+    console.log('🔄 prevBanner called, current:', currentBannerIndex, 'total:', banners.length);
+    
+    if (banners.length <= 1) return;
+
+    // Fade out
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      // Change to previous index
+      setCurrentBannerIndex(prev => {
+        const next = prev <= 0 ? banners.length - 1 : prev - 1;
+        console.log('⬅️ Moving from', prev, 'to', next);
+        return next;
+      });
+      
+      // Fade in
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [currentBannerIndex, banners.length, fadeAnim]);
+
+  // Pan responder for swipe gestures
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 10;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        console.log('👆 Swipe gesture:', gestureState.dx);
+        
+        if (gestureState.dx > 30) {
+          // Swipe right - previous banner
+          console.log('👉 Swipe RIGHT -> Previous');
+          prevBanner();
+        } else if (gestureState.dx < -30) {
+          // Swipe left - next banner
+          console.log('👈 Swipe LEFT -> Next');
+          nextBanner();
+        }
+      },
+    })
+  ).current;
 
   useEffect(() => {
     loadBanners();
     loadVehicles();
     loadCoupons();
+    loadRedemptions();
   }, []);
+
+  // Auto-change effect
+  useEffect(() => {
+    console.log('🔥 Auto-change effect triggered, banners:', banners.length);
+    
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
+    // Start auto-change only if we have multiple banners
+    if (banners.length > 1) {
+      console.log('⏰ Starting auto-change interval');
+      intervalRef.current = setInterval(() => {
+        console.log('🔄 Auto-change triggered');
+        nextBanner();
+      }, 4000);
+    }
+    
+    return () => {
+      if (intervalRef.current) {
+        console.log('🛑 Cleaning up interval');
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [banners.length, nextBanner]);
 
   const loadBanners = async () => {
     try {
@@ -101,6 +226,19 @@ export const HomeScreen: React.FC = () => {
       showError('Error', 'No se pudieron cargar los cupones');
     } finally {
       setCouponsLoading(false);
+    }
+  };
+
+  const loadRedemptions = async () => {
+    try {
+      setRedemptionsLoading(true);
+      const redemptionResponse = await redemptionService.getRedemptions();
+      setRedemptions(redemptionResponse.data);
+    } catch (error) {
+      console.error('Error loading redemptions:', error);
+      showError('Error', 'No se pudieron cargar los canjes');
+    } finally {
+      setRedemptionsLoading(false);
     }
   };
 
@@ -163,6 +301,7 @@ export const HomeScreen: React.FC = () => {
       // Refrescar los datos del home
       await loadVehicles();
       await loadCoupons(); // Refresh coupons for new primary vehicle
+      await loadRedemptions(); // Refresh redemptions for new primary vehicle
       
       // Mostrar modal de éxito
       setSuccessMessage(`${selectedVehicle.brand.name} ${selectedVehicle.model.name} es ahora tu vehículo principal`);
@@ -181,6 +320,46 @@ export const HomeScreen: React.FC = () => {
   const handleSuccessClose = () => {
     setShowSuccessModal(false);
     setSuccessMessage('');
+  };
+
+  const handleCouponPress = (coupon: Coupon) => {
+    setSelectedCoupon(coupon);
+    setShowCouponModal(true);
+  };
+
+  const handleCloseCouponModal = () => {
+    setShowCouponModal(false);
+    setSelectedCoupon(null);
+  };
+
+  const handleViewCoupon = (coupon: Coupon) => {
+    setShowCouponModal(false);
+    setSelectedCoupon(null);
+    
+    // Navigate to coupon detail screen (outside tabs)
+    console.log('Navigate to coupon detail:', coupon.title, 'ID:', coupon.id);
+    router.push(`/(protected)/coupon/${coupon.id}`);
+  };
+
+  const handleRedemptionPress = (redemption: Redemption) => {
+    setSelectedRedemption(redemption);
+    setShowRedemptionModal(true);
+  };
+
+  const handleCloseRedemptionModal = () => {
+    setShowRedemptionModal(false);
+    setSelectedRedemption(null);
+  };
+
+  const handleRedeemRedemption = (redemption: Redemption) => {
+    console.log('Redeeming:', redemption.title);
+    setShowRedemptionModal(false);
+    setShowQRRedemptionModal(true);
+  };
+
+  const handleCloseQRRedemptionModal = () => {
+    setShowQRRedemptionModal(false);
+    setSelectedRedemption(null);
   };
 
   return (
@@ -207,53 +386,52 @@ export const HomeScreen: React.FC = () => {
             <ActivityIndicator size="large" color="#4285F4" />
           </View>
         ) : banners.length > 0 ? (
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            style={styles.bannerContainer}
-            onMomentumScrollEnd={(event) => {
-              const newIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-              setCurrentBannerIndex(newIndex);
-            }}
-          >
-            {banners.map((banner, index) => (
-              <View
-                key={banner.id}
-                style={[styles.bannerWrapper, { width: width }]}
-              >
+          <View style={styles.bannerContainer}>
+            <Animated.View 
+              {...panResponder.panHandlers}
+              style={[
+                styles.bannerWrapper, 
+                { 
+                  width: width,
+                  opacity: fadeAnim
+                }
+              ]}
+            >
+              {banners[currentBannerIndex] && (
                 <TouchableOpacity
                   style={styles.bannerSlide}
-                  onPress={() => handleBannerPress(banner)}
-                  activeOpacity={banner.has_link ? 0.8 : 1}
+                  onPress={() => handleBannerPress(banners[currentBannerIndex])}
+                  activeOpacity={banners[currentBannerIndex].has_link ? 0.8 : 1}
                 >
-                <Image
-                  source={{ uri: banner.banner_image_url }}
-                  style={styles.bannerImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.bannerOverlay}>
-                  <Text style={styles.bannerTitle}>{banner.title.toUpperCase()}</Text>
-                </View>
-                
-                {/* Banner Indicators - show only on current banner */}
-                {banners.length > 1 && index === currentBannerIndex && (
-                  <View style={styles.bannerIndicators}>
-                    {banners.map((_, indicatorIndex) => (
-                      <View
-                        key={indicatorIndex}
-                        style={[
-                          styles.indicator,
-                          indicatorIndex === currentBannerIndex && styles.activeIndicator
-                        ]}
-                      />
-                    ))}
+                  <Image
+                    source={{ uri: banners[currentBannerIndex].banner_image_url }}
+                    style={styles.bannerImage}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.bannerOverlay}>
+                    <Text style={styles.bannerTitle}>
+                      {banners[currentBannerIndex].title.toUpperCase()}
+                    </Text>
                   </View>
-                )}
+                  
+                  {/* Banner Indicators */}
+                  {banners.length > 1 && (
+                    <View style={styles.bannerIndicators}>
+                      {banners.map((_, indicatorIndex) => (
+                        <View
+                          key={indicatorIndex}
+                          style={[
+                            styles.indicator,
+                            indicatorIndex === currentBannerIndex && styles.activeIndicator
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  )}
                 </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
+              )}
+            </Animated.View>
+          </View>
         ) : (
           <View style={styles.noBannersContainer}>
             <Text style={styles.noBannersText}>No hay banners disponibles</Text>
@@ -336,6 +514,7 @@ export const HomeScreen: React.FC = () => {
                   <TouchableOpacity 
                     style={styles.coupon}
                     activeOpacity={0.8}
+                    onPress={() => handleCouponPress(coupon)}
                   >
                     <Image
                       source={{ uri: coupon.presentation_image_url }}
@@ -360,29 +539,41 @@ export const HomeScreen: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Canjes</Text>
           
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            style={styles.canjesScroll}
-          >
-            <View style={[styles.canjeCard, styles.canjeActive]}>
-              <Text style={styles.canjeNumber}>10</Text>
-              <Text style={styles.canjeLabel}>SELLOS</Text>
-              <Text style={styles.canjeDescription}>canjear por 10 sellos</Text>
+          {redemptionsLoading ? (
+            <View style={styles.redemptionLoading}>
+              <ActivityIndicator size="large" color="#4285F4" />
             </View>
-            
-            <View style={styles.canjeCard}>
-              <Text style={styles.canjeNumber}>15</Text>
-              <Text style={styles.canjeLabel}>SELLOS</Text>
-              <Text style={styles.canjeDescription}>Canjear por 15 sellos</Text>
+          ) : redemptions.length > 0 ? (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              style={styles.canjesScroll}
+              contentContainerStyle={styles.canjesScrollContent}
+            >
+              {redemptions.map((redemption, index) => (
+                <View key={redemption.id} style={styles.canjeContainer}>
+                  <TouchableOpacity
+                    style={styles.canjeCard}
+                    activeOpacity={0.8}
+                    onPress={() => handleRedemptionPress(redemption)}
+                  >
+                    <Image
+                      source={{ uri: redemption.presentation_image_url }}
+                      style={styles.canjeImage}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
+                  <Text style={styles.canjeTitle}>
+                    {redemption.title}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.noRedemptionsContainer}>
+              <Text style={styles.noRedemptionsText}>No hay canjes disponibles</Text>
             </View>
-            
-            <View style={styles.canjeCard}>
-              <Text style={styles.canjeNumber}>20</Text>
-              <Text style={styles.canjeLabel}>SELLOS</Text>
-              <Text style={styles.canjeDescription}>canjear por 20</Text>
-            </View>
-          </ScrollView>
+          )}
         </View>
       </ScrollView>
 
@@ -418,6 +609,33 @@ export const HomeScreen: React.FC = () => {
         cancelText=""
         type="success"
       />
+
+      {/* Coupon Modal */}
+      <CouponModal
+        visible={showCouponModal}
+        coupon={selectedCoupon}
+        onClose={handleCloseCouponModal}
+        onViewCoupon={handleViewCoupon}
+      />
+
+      {/* Redemption Modal */}
+      <RedemptionModal
+        visible={showRedemptionModal}
+        redemption={selectedRedemption}
+        onClose={handleCloseRedemptionModal}
+        onRedeem={handleRedeemRedemption}
+      />
+
+      {/* QR Redemption Modal */}
+      {selectedRedemption && (
+        <QRRedemptionModal
+          visible={showQRRedemptionModal}
+          onClose={handleCloseQRRedemptionModal}
+          redemptionId={selectedRedemption.id}
+          redemptionTitle={selectedRedemption.title}
+          vehiclePlate={primaryVehicle?.license_plate || ''}
+        />
+      )}
     </View>
   );
 };
@@ -444,7 +662,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   bannerWrapper: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 0, // Remove padding for full screen
     height: 200,
   },
   bannerSlide: {
@@ -452,7 +670,7 @@ const styles = StyleSheet.create({
     height: '100%',
     overflow: 'hidden',
     position: 'relative',
-    borderRadius: 16,
+    borderRadius: 0, // Remove border radius for full screen
   },
   bannerImage: {
     width: '100%',
@@ -675,39 +893,47 @@ const styles = StyleSheet.create({
   },
   canjesScroll: {
     marginHorizontal: -20,
+  },
+  canjesScrollContent: {
     paddingHorizontal: 20,
   },
+  canjeContainer: {
+    marginRight: 16,
+    alignItems: 'flex-start',
+  },
   canjeCard: {
-    width: 120,
-    height: 120,
-    backgroundColor: '#F5F5F5',
+    width: 160,
+    height: 160,
     borderRadius: 16,
-    padding: 16,
-    marginRight: 12,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  canjeImage: {
+    width: '100%',
+    height: '100%',
+  },
+  canjeTitle: {
+    fontSize: 14,
+    fontFamily: 'Poppins',
+    color: '#535353',
+    textAlign: 'left',
+    marginTop: 10,
+  },
+  redemptionLoading: {
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  canjeActive: {
-    backgroundColor: '#FFD700',
+  noRedemptionsContainer: {
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
-  canjeNumber: {
-    fontSize: 32,
-    fontFamily: 'Poppins-Bold',
-    color: '#FFFFFF',
-    textAlign: 'center',
-  },
-  canjeLabel: {
-    fontSize: 12,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  canjeDescription: {
-    fontSize: 10,
+  noRedemptionsText: {
+    fontSize: 16,
     fontFamily: 'Poppins-Regular',
-    color: '#666666',
+    color: '#6C7278',
     textAlign: 'center',
-    lineHeight: 12,
   },
 });

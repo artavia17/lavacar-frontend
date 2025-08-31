@@ -60,4 +60,8 @@ export const API_ENDPOINTS = {
   
   // Coupon endpoints
   RECENT_COUPONS: '/coupons/recent',
+  COUPON_DETAIL: '/coupons',
+  
+  // Redemption endpoints
+  REDEMPTIONS: '/redemptions',
 };

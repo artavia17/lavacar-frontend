@@ -18,6 +18,24 @@ export interface Coupon {
   created_at_human: string;
 }
 
+export interface CouponDetail extends Coupon {
+  vehicle_brands: any[];
+  vehicle_types: any[];
+  plate_ending_filter: string;
+  applies_to_your_vehicle: boolean;
+  your_vehicle: {
+    license_plate: string;
+    brand: string;
+    type: string;
+  };
+  updated_at: string;
+}
+
+export interface CouponDetailResponse {
+  success: boolean;
+  data: CouponDetail;
+}
+
 export interface CouponResponse {
   success: boolean;
   data: Coupon[];
@@ -54,6 +72,30 @@ class CouponServiceClass {
       return response;
     } catch (error) {
       console.error('❌ Error loading coupons:', error);
+      throw error;
+    }
+  }
+
+  async getCouponDetail(couponId: number): Promise<CouponDetailResponse> {
+    try {
+      console.log('🎟️ Loading coupon detail for ID:', couponId);
+      
+      const response = await httpClient.get<CouponDetailResponse>(
+        `${API_ENDPOINTS.COUPON_DETAIL}/${couponId}`,
+        true // Requires auth
+      );
+
+      console.log('📋 Coupon detail response:', response);
+      
+      if (!response.success) {
+        const apiError = new Error(response.message || 'Error loading coupon detail');
+        (apiError as any).response = { data: response };
+        throw apiError;
+      }
+
+      return response;
+    } catch (error) {
+      console.error('❌ Error loading coupon detail:', error);
       throw error;
     }
   }
