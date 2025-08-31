@@ -1,20 +1,22 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, View, StyleSheet } from 'react-native';
-import { 
-  HomeIcon, 
-  CalendarIcon, 
-  ClockIcon
+import { Platform, StyleSheet } from 'react-native';
+import {
+  CalendarIcon,
+  ClockIcon,
+  HomeIcon
 } from 'react-native-heroicons/outline';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabHeader } from '../../../src/presentation/components/common/TabHeader';
 import { TabScrollProvider } from '../../../src/presentation/contexts/TabScrollContext';
 
-export default function UserLayout() {
+const TabsWithSafeArea = () => {
+  const insets = useSafeAreaInsets();
+  
   return (
-    <TabScrollProvider>
-      <View style={styles.container}>
-        <TabHeader />
-        <Tabs
+    <>
+      <TabHeader />
+      <Tabs
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
@@ -22,20 +24,12 @@ export default function UserLayout() {
             bottom: 0,
             left: 0,
             right: 0,
-            height: Platform.OS === 'ios' ? 85 : 70,
+            height: (Platform.OS === 'ios' ? 85 : 70) + insets.bottom,
             backgroundColor: '#FFFFFF',
             borderTopWidth: 1,
             borderTopColor: '#E8E9EA',
-            paddingBottom: Platform.OS === 'ios' ? 25 : 10,
+            paddingBottom: insets.bottom + (Platform.OS === 'ios' ? 25 : 10),
             paddingTop: 10,
-            elevation: 10,
-            shadowColor: '#000',
-            shadowOffset: {
-              width: 0,
-              height: -2,
-            },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
           },
           tabBarActiveTintColor: '#4285F4',
           tabBarInactiveTintColor: '#6C7278',
@@ -74,8 +68,17 @@ export default function UserLayout() {
           }}
         />
       </Tabs>
-      </View>
-    </TabScrollProvider>
+    </>
+  );
+};
+
+export default function UserLayout() {
+  return (
+    <SafeAreaProvider>
+      <TabScrollProvider>
+        <TabsWithSafeArea />
+      </TabScrollProvider>
+    </SafeAreaProvider>
   );
 }
 

@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { 
   UserIcon, 
@@ -17,8 +18,11 @@ import {
   ChevronRightIcon
 } from 'react-native-heroicons/outline';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const ProfileScreen: React.FC = () => {
+  const insets = useSafeAreaInsets();
+
   const handleLogout = () => {
     Alert.alert(
       'Cerrar Sesión',
@@ -70,17 +74,21 @@ export const ProfileScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Mi Perfil</Text>
-      </View>
 
       <ScrollView 
         style={styles.content} 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { 
+            paddingTop: 80 + insets.top, // Space for fixed header
+            paddingBottom: (Platform.OS === 'ios' ? 110 : 90) + insets.bottom 
+          }
+        ]}
         showsVerticalScrollIndicator={false}
       >
+        {/* Header Title */}
+        <Text style={styles.title}>Mi Perfil</Text>
+        
         {/* User Info */}
         <View style={styles.userInfo}>
           <View style={styles.avatar}>
@@ -142,23 +150,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
   title: {
     fontSize: 24,
     fontFamily: 'Poppins-Bold',
     color: '#1A1A1A',
+    marginBottom: 32,
   },
   content: {
     flex: 1,
     paddingHorizontal: 20,
   },
-  scrollContent: {
-    paddingBottom: 100, // Space for tab bar
-  },
+  scrollContent: {},
   userInfo: {
     flexDirection: 'row',
     alignItems: 'center',

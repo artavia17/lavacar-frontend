@@ -113,6 +113,20 @@ export interface UserAccount {
   };
 }
 
+export interface UserVehiclesResponse {
+  success: boolean;
+  data: UserVehicle[];
+  meta: {
+    total: number;
+    total_points: number;
+    primary_vehicle: {
+      id: number;
+      license_plate: string;
+      vehicle_description: string;
+    };
+  };
+}
+
 class VehicleServiceClass {
 
   async getBrands(): Promise<VehicleBrand[]> {
@@ -214,6 +228,26 @@ class VehicleServiceClass {
     }
   }
 
+  async getUserVehiclesWithMeta(): Promise<UserVehiclesResponse['data'] & { meta: UserVehiclesResponse['meta'] }> {
+    try {
+      console.log('🚗 Fetching user vehicles with metadata...');
+      
+      const response = await httpClient.get<UserVehiclesResponse>(
+        API_ENDPOINTS.USER_VEHICLES,
+        true // Requires auth
+      );
+
+      console.log('📋 User vehicles with meta response:', response);
+      return {
+        ...response.data?.data,
+        meta: response.data?.meta
+      } as any;
+    } catch (error) {
+      console.error('❌ Error fetching user vehicles with meta:', error);
+      throw error;
+    }
+  }
+
   async createVehicle(vehicleData: CreateVehicleRequest): Promise<UserVehicle> {
     try {
       console.log('🚗 Creating vehicle...', vehicleData);
@@ -240,6 +274,35 @@ class VehicleServiceClass {
       return response.data;
     } catch (error) {
       console.error('❌ Error creating vehicle:', error);
+      throw error;
+    }
+  }
+
+  async setPrimaryVehicle(vehicleId: number): Promise<UserVehicle> {
+    try {
+      console.log(`🚗 Setting vehicle ${vehicleId} as primary...`);
+      
+      const response = await httpClient.put<UserVehicle>(
+        `${API_ENDPOINTS.USER_VEHICLES}/${vehicleId}/primary`,
+        {},
+        true // Requires auth
+      );
+
+      console.log('📋 Set primary vehicle response:', response);
+      
+      if (!response.success) {
+        const apiError = new Error(response.message || 'Error setting primary vehicle');
+        (apiError as any).response = { data: response };
+        throw apiError;
+      }
+
+      if (!response.data) {
+        throw new Error('No vehicle data received');
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('❌ Error setting primary vehicle:', error);
       throw error;
     }
   }

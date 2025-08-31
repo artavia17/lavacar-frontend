@@ -54,4 +54,10 @@ export const API_ENDPOINTS = {
   VEHICLE_BRANDS: '/public/vehicles/brands',
   VEHICLE_MODELS: '/public/vehicles/models',
   VEHICLE_TYPES: '/public/vehicles/types',
+  
+  // Banner endpoints
+  BANNERS: '/banners',
+  
+  // Coupon endpoints
+  RECENT_COUPONS: '/coupons/recent',
 };

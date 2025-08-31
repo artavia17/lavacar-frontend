@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { ExclamationTriangleIcon } from 'react-native-heroicons/outline';
+import { ExclamationTriangleIcon, CheckCircleIcon } from 'react-native-heroicons/outline';
 
 interface ConfirmationModalProps {
   visible: boolean;
@@ -17,7 +17,7 @@ interface ConfirmationModalProps {
   message?: string;
   confirmText?: string;
   cancelText?: string;
-  type?: 'warning' | 'danger';
+  type?: 'warning' | 'danger' | 'success';
 }
 
 const { width } = Dimensions.get('window');
@@ -33,6 +33,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   type = 'warning',
 }) => {
   const isDanger = type === 'danger';
+  const isSuccess = type === 'success';
 
   return (
     <Modal
@@ -45,30 +46,39 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <View style={styles.modalContainer}>
           <View style={[
             styles.iconContainer,
-            { backgroundColor: isDanger ? '#FEF2F2' : '#FFF7ED' }
+            { backgroundColor: isDanger ? '#FEF2F2' : isSuccess ? '#F0FDF4' : '#FFF7ED' }
           ]}>
-            <ExclamationTriangleIcon 
-              size={48} 
-              color={isDanger ? '#EF4444' : '#F59E0B'} 
-            />
+            {isSuccess ? (
+              <CheckCircleIcon 
+                size={48} 
+                color="#10B981" 
+              />
+            ) : (
+              <ExclamationTriangleIcon 
+                size={48} 
+                color={isDanger ? '#EF4444' : '#F59E0B'} 
+              />
+            )}
           </View>
           
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
           
           <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={onCancel}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.cancelButtonText}>{cancelText}</Text>
-            </TouchableOpacity>
+            {!isSuccess && (
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={onCancel}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelButtonText}>{cancelText}</Text>
+              </TouchableOpacity>
+            )}
             
             <TouchableOpacity
               style={[
-                styles.confirmButton,
-                { backgroundColor: isDanger ? '#EF4444' : '#F59E0B' }
+                isSuccess ? styles.singleButton : styles.confirmButton,
+                { backgroundColor: isDanger ? '#EF4444' : isSuccess ? '#10B981' : '#F59E0B' }
               ]}
               onPress={onConfirm}
               activeOpacity={0.7}
@@ -150,5 +160,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins-SemiBold',
     color: '#FFFFFF',
+  },
+  singleButton: {
+    width: '100%',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
   },
 });

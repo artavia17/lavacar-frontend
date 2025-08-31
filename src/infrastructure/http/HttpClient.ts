@@ -86,6 +86,13 @@ export class HttpClient {
 
       if (!response.ok) {
         console.log(`❌ Request failed with status ${response.status}`);
+        
+        // Handle 401 Unauthorized - token expired
+        if (response.status === 401) {
+          console.log('🔒 Token expired, clearing auth data and redirecting to login');
+          await this.handleTokenExpiration();
+        }
+        
         return {
           success: false,
           message: responseData.message || 'Ha ocurrido un error',
@@ -161,6 +168,23 @@ export class HttpClient {
     } catch (error) {
       console.error('Error getting auth token:', error);
       return null;
+    }
+  }
+
+  // Handle token expiration by clearing data and redirecting to login
+  private async handleTokenExpiration(): Promise<void> {
+    try {
+      // Clear all auth-related data
+      await this.clearAuthToken();
+      await AsyncStorage.removeItem('user_data');
+      
+      // Import router dynamically to avoid circular dependencies
+      const { router } = await import('expo-router');
+      
+      // Redirect to login screen
+      router.replace('/(auth)/login');
+    } catch (error) {
+      console.error('Error handling token expiration:', error);
     }
   }
 }

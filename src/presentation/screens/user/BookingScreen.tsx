@@ -6,18 +6,38 @@ import {
   StatusBar,
   ScrollView,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CalendarIcon, ClockIcon, MapPinIcon } from 'react-native-heroicons/outline';
+import { useTabScroll } from '../../contexts/TabScrollContext';
 
 export const BookingScreen: React.FC = () => {
+  const { setIsScrolled } = useTabScroll();
+  const insets = useSafeAreaInsets();
+
+  const handleScroll = (event: any) => {
+    const { contentOffset } = event.nativeEvent;
+    const currentScrollY = contentOffset.y;
+    setIsScrolled(currentScrollY > 10);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <ScrollView 
         style={styles.content} 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { 
+            paddingTop: 80 + insets.top, // Space for fixed header
+            paddingBottom: (Platform.OS === 'ios' ? 110 : 90) + insets.bottom 
+          }
+        ]}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         {/* Header Title */}
         <Text style={styles.title}>Solicitar Servicio</Text>
@@ -96,10 +116,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  scrollContent: {
-    paddingTop: 20,
-    paddingBottom: 100, // Space for tab bar
-  },
+  scrollContent: {},
   section: {
     marginBottom: 32,
   },

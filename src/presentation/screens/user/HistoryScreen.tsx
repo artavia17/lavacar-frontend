@@ -6,8 +6,11 @@ import {
   StatusBar,
   ScrollView,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CheckCircleIcon, ClockIcon, XCircleIcon } from 'react-native-heroicons/outline';
+import { useTabScroll } from '../../contexts/TabScrollContext';
 
 const mockHistory = [
   {
@@ -49,6 +52,14 @@ const mockHistory = [
 ];
 
 export const HistoryScreen: React.FC = () => {
+  const { setIsScrolled } = useTabScroll();
+  const insets = useSafeAreaInsets();
+
+  const handleScroll = (event: any) => {
+    const { contentOffset } = event.nativeEvent;
+    const currentScrollY = contentOffset.y;
+    setIsScrolled(currentScrollY > 10);
+  };
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
@@ -94,8 +105,16 @@ export const HistoryScreen: React.FC = () => {
 
       <ScrollView 
         style={styles.content} 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { 
+            paddingTop: 80 + insets.top, // Space for fixed header
+            paddingBottom: (Platform.OS === 'ios' ? 110 : 90) + insets.bottom 
+          }
+        ]}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         {/* Header Title */}
         <Text style={styles.title}>Historial de Servicios</Text>
@@ -164,10 +183,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  scrollContent: {
-    paddingTop: 20,
-    paddingBottom: 100, // Space for tab bar
-  },
+  scrollContent: {},
   historyCard: {
     backgroundColor: '#F8F9FA',
     borderRadius: 16,

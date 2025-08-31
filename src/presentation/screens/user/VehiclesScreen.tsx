@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { ChevronLeftIcon, PlusIcon } from 'react-native-heroicons/outline';
 import { router } from 'expo-router';
@@ -16,6 +17,7 @@ import { useError } from '../../providers/ErrorProvider';
 export const VehiclesScreen: React.FC = () => {
   const [vehicles, setVehicles] = useState<UserVehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [isScrolledTop, setIsScrolledTop] = useState(true);
   const [isScrolledBottom, setIsScrolledBottom] = useState(false);
@@ -34,16 +36,28 @@ export const VehiclesScreen: React.FC = () => {
     setIsScrolledBottom(isAtBottom);
   };
 
-  const loadVehicles = async () => {
+  const loadVehicles = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       const userVehicles = await VehicleService.getUserVehicles();
       setVehicles(userVehicles);
     } catch (error) {
       showError('Error al cargar los vehículos');
     } finally {
-      setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
+  };
+
+  const onRefresh = () => {
+    loadVehicles(true);
   };
 
   useEffect(() => {
@@ -80,6 +94,16 @@ export const VehiclesScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#4285F4']}
+            tintColor="#4285F4"
+            title="Refrescando..."
+            titleColor="#4285F4"
+          />
+        }
       >
         {loading ? (
           <View style={styles.loadingContainer}>

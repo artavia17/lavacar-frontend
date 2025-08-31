@@ -30,6 +30,10 @@ export const TabHeader: React.FC = () => {
 
 const styles = StyleSheet.create({
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -37,14 +41,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
     backgroundColor: '#FFFFFF',
+    zIndex: 1000,
   },
   headerWithBorder: {
     borderBottomWidth: 1,
     borderBottomColor: '#E8E9EA',
   },
   logo: {
-    fontSize: 18,
-    fontFamily: 'Poppins-SemiBold',
+    fontSize: 20,
+    fontFamily: 'Poppins-Bold',
     color: '#4285F4',
   },
   menuButton: {
