@@ -84,10 +84,10 @@ export const EmailLoginScreen: React.FC = () => {
       if (response.success && response.data) {
         // Login exitoso - redirigir según tipo de usuario
         if (userType === 'agent') {
-          console.log('✅ Agent login successful:', response.data.account.email);
-          router.replace('/(protected)/(agent)');
+          console.log('✅ Agent login successful:', response.data.agent?.name || response.data.agent?.code);
+          router.replace('/(protected)/(agent)/');
         } else {
-          console.log('✅ User login successful:', response.data.account.email);
+          console.log('✅ User login successful:', response.data.account?.email);
           router.replace('/(protected)/(user)');
         }
       } else {

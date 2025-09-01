@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Dimensions,
   Platform,
   RefreshControl,
@@ -13,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Transaction, transactionService } from '../../../infrastructure/services/TransactionService';
 import { UserVehicle, vehicleService } from '../../../infrastructure/services/VehicleService';
+import { TransactionsSectionSkeleton, VehicleHeaderSkeleton } from '../../components/common/SkeletonLoader';
 import { useTabScroll } from '../../contexts/TabScrollContext';
 import { useError } from '../../providers/ErrorProvider';
 
@@ -145,33 +145,28 @@ export const AccountScreen: React.FC = () => {
         }
       >
         {/* Vehicle Header */}
-        <View style={styles.vehicleHeader}>
-          {vehicleLoading ? (
-            <ActivityIndicator size="small" color="#4285F4" />
-          ) : primaryVehicle ? (
-            <>
-              <Text style={styles.vehicleTitle}>
-                {primaryVehicle.brand.name} {primaryVehicle.model.name}
-              </Text>
-              <Text style={styles.vehiclePlate}>
-                Placa: {primaryVehicle.license_plate}
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.vehicleTitle}>Sin vehículo</Text>
-              <Text style={styles.vehiclePlate}>No hay vehículo principal</Text>
-            </>
-          )}
-        </View>
+        {vehicleLoading ? (
+          <VehicleHeaderSkeleton />
+        ) : primaryVehicle ? (
+          <View style={styles.vehicleHeader}>
+            <Text style={styles.vehicleTitle}>
+              {primaryVehicle.brand.name} {primaryVehicle.model.name}
+            </Text>
+            <Text style={styles.vehiclePlate}>
+              Placa: {primaryVehicle.license_plate}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.vehicleHeader}>
+            <Text style={styles.vehicleTitle}>Sin vehículo</Text>
+            <Text style={styles.vehiclePlate}>No hay vehículo principal</Text>
+          </View>
+        )}
 
 
         {/* Transactions by Month */}
         {transactionsLoading ? (
-          <View style={styles.transactionLoading}>
-            <ActivityIndicator size="large" color="#4285F4" />
-            <Text style={styles.loadingText}>Cargando transacciones...</Text>
-          </View>
+          <TransactionsSectionSkeleton />
         ) : transactions.length > 0 ? (
           Object.entries(groupTransactionsByMonth(transactions)).map(([month, monthTransactions]) => (
             <View key={month} style={styles.monthSection}>
@@ -208,6 +203,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    marginTop: Platform.OS === 'android' ? 20 : 0,
   },
   content: {
     flex: 1,
@@ -263,18 +259,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Poppins-SemiBold',
     color: '#1A1A1A',
-  },
-  transactionLoading: {
-    height: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  loadingText: {
-    fontSize: 14,
-    fontFamily: 'Poppins-Regular',
-    color: '#6C7278',
-    marginTop: 12,
   },
   noTransactionsContainer: {
     height: 120,

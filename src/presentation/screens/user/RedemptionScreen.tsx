@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Dimensions,
   Image,
   Platform,
@@ -18,6 +17,7 @@ import { UserVehicle, vehicleService } from '../../../infrastructure/services/Ve
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { QRRedemptionModal } from '../../components/common/QRRedemptionModal';
 import { RedemptionModal } from '../../components/common/RedemptionModal';
+import { RedemptionItemSkeleton, VehicleCardSkeleton } from '../../components/common/SkeletonLoader';
 import { useTabScroll } from '../../contexts/TabScrollContext';
 import { useError } from '../../providers/ErrorProvider';
 
@@ -184,9 +184,7 @@ export const RedemptionScreen: React.FC = () => {
         {/* Vehicle Slider */}
         <View style={styles.vehicleSection}>
           {vehiclesLoading ? (
-            <View style={styles.vehicleLoading}>
-              <ActivityIndicator size="large" color="#4285F4" />
-            </View>
+            <VehicleCardSkeleton />
           ) : vehicles.length > 0 ? (
             <ScrollView
               horizontal
@@ -225,7 +223,7 @@ export const RedemptionScreen: React.FC = () => {
                     <Text style={[
                       styles.pointsLabel,
                       !vehicle.is_primary && styles.pointsLabelGray
-                    ]}>sellos a favor</Text>
+                    ]}>Sellos</Text>
                     <Text style={[
                       styles.pointsNumber,
                       !vehicle.is_primary && styles.pointsNumberGray
@@ -240,8 +238,11 @@ export const RedemptionScreen: React.FC = () => {
         {/* Redemptions */}
         <View style={styles.section}>
           {redemptionsLoading ? (
-            <View style={styles.redemptionLoading}>
-              <ActivityIndicator size="large" color="#4285F4" />
+            <View style={styles.skeletonContainer}>
+              <RedemptionItemSkeleton />
+              <RedemptionItemSkeleton />
+              <RedemptionItemSkeleton />
+              <RedemptionItemSkeleton />
             </View>
           ) : redemptions.length > 0 ? (
             <>
@@ -414,10 +415,8 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   // Redemptions Styles
-  redemptionLoading: {
-    height: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
+  skeletonContainer: {
+    paddingHorizontal: 0,
   },
   redemptionContainer: {
     marginBottom: 24,

@@ -24,7 +24,7 @@ console.log('🔧 Environment config loaded:', {
 export const API_ENDPOINTS = {
   // Auth endpoints
   LOGIN: '/auth/login',
-  AGENT_LOGIN: '/auth/agent/login',
+  AGENT_LOGIN: '/agent/login',
   REGISTER: '/auth/register', 
   VERIFY_EMAIL: '/auth/verify-email',
   FORGOT_PASSWORD: '/auth/forgot-password',
@@ -68,4 +68,7 @@ export const API_ENDPOINTS = {
   
   // Transaction endpoints
   RECENT_TRANSACTIONS: '/account/transactions/recent',
+  AGENT_TRANSACTIONS: '/agent/transactions',
+  CLAIM_COUPON: '/agent/transactions/claim-coupon',
+  CLAIM_REDEMPTION: '/agent/transactions/claim-redemption',
 };

@@ -13,8 +13,8 @@ import {
 import { ChevronLeftIcon } from 'react-native-heroicons/outline';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CouponDetail, couponService } from '../../../infrastructure/services/CouponService';
-import { useError } from '../../providers/ErrorProvider';
 import { QRCouponModal } from '../../components/common/QRCouponModal';
+import { useError } from '../../providers/ErrorProvider';
 
 interface CouponDetailScreenProps {
   couponId: number;

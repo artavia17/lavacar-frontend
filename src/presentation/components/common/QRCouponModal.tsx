@@ -1,11 +1,11 @@
 import React from 'react';
 import {
+  Dimensions,
+  Modal,
   StyleSheet,
   Text,
-  View,
-  Modal,
   TouchableOpacity,
-  Dimensions,
+  View,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 
@@ -33,7 +33,7 @@ export const QRCouponModal: React.FC<QRCouponModalProps> = ({
   });
 
   const formatExpiration = (expirationDate: string | null) => {
-    if (!expirationDate) return 'Válido hasta 00/00/0000';
+    if (!expirationDate) return 'Sin fecha de expiración';
     
     try {
       const date = new Date(expirationDate);
@@ -42,7 +42,7 @@ export const QRCouponModal: React.FC<QRCouponModalProps> = ({
       const year = date.getFullYear();
       return `Válido hasta ${day}/${month}/${year}`;
     } catch {
-      return 'Válido hasta 00/00/0000';
+      return 'Sin fecha de expiración';
     }
   };
 

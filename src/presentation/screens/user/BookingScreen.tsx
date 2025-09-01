@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   Platform,
   RefreshControl,
@@ -10,11 +9,12 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Coupon, couponService } from '../../../infrastructure/services/CouponService';
 import { CouponModal } from '../../components/common/CouponModal';
+import { CouponCardSkeleton } from '../../components/common/SkeletonLoader';
 import { useTabScroll } from '../../contexts/TabScrollContext';
 import { useError } from '../../providers/ErrorProvider';
 
@@ -163,8 +163,22 @@ export const BookingScreen: React.FC = () => {
         }
       >
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#4285F4" />
+          <View style={styles.skeletonContainer}>
+            <Text style={styles.sectionTitle}>Lavado</Text>
+            <View style={styles.couponsGrid}>
+              <CouponCardSkeleton />
+              <CouponCardSkeleton />
+            </View>
+            <Text style={styles.sectionTitle}>Lustrado</Text>
+            <View style={styles.couponsGrid}>
+              <CouponCardSkeleton />
+              <CouponCardSkeleton />
+            </View>
+            <Text style={styles.sectionTitle}>Interior</Text>
+            <View style={styles.couponsGrid}>
+              <CouponCardSkeleton />
+              <CouponCardSkeleton />
+            </View>
           </View>
         ) : (
           <>
@@ -190,6 +204,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    marginTop: Platform.OS === 'android' ? 20 : 0,
   },
   content: {
     flex: 1,
@@ -238,5 +253,14 @@ const styles = StyleSheet.create({
     color: '#535353',
     textAlign: 'left',
     marginTop: 0,
+  },
+  skeletonContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  couponsGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 24,
   },
 });

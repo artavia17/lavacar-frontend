@@ -1,3 +1,6 @@
-import { ProfileScreen } from '../../../src/presentation/screens/shared/ProfileScreen';
+import React from 'react';
+import { AgentProfileScreen } from '../../../src/presentation/screens/protected/agent/AgentProfileScreen';
 
-export default ProfileScreen;
+export default function AgentProfilePage() {
+  return <AgentProfileScreen />;
+}

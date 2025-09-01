@@ -32,6 +32,7 @@ export class HttpClient {
   private async getAuthHeaders(): Promise<Record<string, string>> {
     try {
       const token = await AsyncStorage.getItem('auth_token');
+      console.log('🔑 Using auth token:', token ? `${token.substring(0, 10)}...` : 'none');
       return token ? { 'Authorization': `Bearer ${token}` } : {};
     } catch (error) {
       console.error('Error getting auth token:', error);
@@ -146,9 +147,15 @@ export class HttpClient {
   // Method to save auth token
   async saveAuthToken(token: string): Promise<void> {
     try {
+      console.log('📝 Saving auth token to AsyncStorage:', token);
       await AsyncStorage.setItem('auth_token', token);
+      console.log('✅ Auth token saved successfully');
+      
+      // Verify it was saved correctly
+      const savedToken = await AsyncStorage.getItem('auth_token');
+      console.log('✅ Token verification:', savedToken === token ? 'Match' : 'Mismatch');
     } catch (error) {
-      console.error('Error saving auth token:', error);
+      console.error('❌ Error saving auth token:', error);
     }
   }
 

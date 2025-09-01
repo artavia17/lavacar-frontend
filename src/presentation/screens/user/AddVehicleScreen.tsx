@@ -96,8 +96,12 @@ export const AddVehicleScreen: React.FC = () => {
   const loadBrands = async () => {
     setLoadingBrands(true);
     try {
-      const brandsData = await VehicleService.getBrands();
-      setBrands(brandsData);
+      const response = await VehicleService.getBrands();
+      if (response.success && response.data) {
+        setBrands(response.data);
+      } else {
+        showError('Error al cargar las marcas');
+      }
     } catch (error) {
       showError('Error al cargar las marcas');
     } finally {
@@ -110,8 +114,12 @@ export const AddVehicleScreen: React.FC = () => {
     
     try {
       setLoadingModels(true);
-      const modelsData = await VehicleService.getModelsByBrand(brandId);
-      setModels(modelsData);
+      const response = await VehicleService.getModelsByBrand(brandId);
+      if (response.success && response.data) {
+        setModels(response.data);
+      } else {
+        showError('Error al cargar los modelos');
+      }
     } catch (error) {
       showError('Error al cargar los modelos');
     } finally {
@@ -122,8 +130,12 @@ export const AddVehicleScreen: React.FC = () => {
   const loadTypes = async () => {
     setLoadingTypes(true);
     try {
-      const typesData = await VehicleService.getVehicleTypes();
-      setTypes(typesData);
+      const response = await VehicleService.getVehicleTypes();
+      if (response.success && response.data) {
+        setTypes(response.data);
+      } else {
+        showError('Error al cargar los tipos');
+      }
     } catch (error) {
       showError('Error al cargar los tipos');
     } finally {
@@ -132,17 +144,17 @@ export const AddVehicleScreen: React.FC = () => {
   };
 
   // Convert API data to VehicleSelectInput format
-  const brandItems: VehicleSelectItem[] = brands.map(brand => ({
+  const brandItems: VehicleSelectItem[] = (brands || []).map(brand => ({
     label: brand.name,
     value: brand.id.toString()
   }));
 
-  const modelItems: VehicleSelectItem[] = models.map(model => ({
+  const modelItems: VehicleSelectItem[] = (models || []).map(model => ({
     label: model.name,
     value: model.id.toString()
   }));
 
-  const typeItems: VehicleSelectItem[] = types.map(type => ({
+  const typeItems: VehicleSelectItem[] = (types || []).map(type => ({
     label: type.name,
     value: type.id.toString()
   }));

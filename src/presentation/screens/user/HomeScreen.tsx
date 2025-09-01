@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   Dimensions,
   Image,
@@ -14,7 +13,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Banner, bannerService } from '../../../infrastructure/services/BannerService';
@@ -24,8 +23,14 @@ import { UserVehicle, vehicleService } from '../../../infrastructure/services/Ve
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { CouponModal } from '../../components/common/CouponModal';
 import { NotificationPermissionModal } from '../../components/common/NotificationPermissionModal';
-import { RedemptionModal } from '../../components/common/RedemptionModal';
 import { QRRedemptionModal } from '../../components/common/QRRedemptionModal';
+import { RedemptionModal } from '../../components/common/RedemptionModal';
+import {
+  BannerSkeleton,
+  CouponCardSkeleton,
+  RedemptionItemSkeleton,
+  VehicleCardSkeleton
+} from '../../components/common/SkeletonLoader';
 import { useTabScroll } from '../../contexts/TabScrollContext';
 import { useInitialNotificationPermission } from '../../hooks/useInitialNotificationPermission';
 import { useError } from '../../providers/ErrorProvider';
@@ -393,7 +398,7 @@ export const HomeScreen: React.FC = () => {
         contentContainerStyle={[
           styles.scrollContent,
           { 
-            paddingTop: 80 + insets.top, // Space for fixed header
+            paddingTop: Platform.OS === 'ios' ? 60 + insets.top : 80 + insets.top, // Space for fixed header
             paddingBottom: (Platform.OS === 'ios' ? 110 : 90) + insets.bottom 
           }
         ]}
@@ -412,9 +417,7 @@ export const HomeScreen: React.FC = () => {
       >
         {/* Banners */}
         {bannersLoading ? (
-          <View style={styles.bannerLoading}>
-            <ActivityIndicator size="large" color="#4285F4" />
-          </View>
+          <BannerSkeleton />
         ) : banners.length > 0 ? (
           <View style={styles.bannerContainer}>
             <Animated.View 
@@ -470,9 +473,7 @@ export const HomeScreen: React.FC = () => {
 
         {/* Vehicle Slider */}
         {vehiclesLoading ? (
-          <View style={styles.vehicleLoading}>
-            <ActivityIndicator size="large" color="#4285F4" />
-          </View>
+          <VehicleCardSkeleton />
         ) : vehicles.length > 0 ? (
           <ScrollView
             horizontal
@@ -509,7 +510,7 @@ export const HomeScreen: React.FC = () => {
                   <Text style={[
                     styles.pointsLabel,
                     !vehicle.is_primary && styles.pointsLabelGray
-                  ]}>sellos a favor</Text>
+                  ]}>Sellos</Text>
                   <Text style={[
                     styles.pointsNumber,
                     !vehicle.is_primary && styles.pointsNumberGray
@@ -529,8 +530,9 @@ export const HomeScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Cupones</Text>
           
           {couponsLoading ? (
-            <View style={styles.couponsLoading}>
-              <ActivityIndicator size="large" color="#4285F4" />
+            <View style={styles.couponsContainer}>
+              <CouponCardSkeleton />
+              <CouponCardSkeleton />
             </View>
           ) : coupons.length > 0 ? (
             <ScrollView 
@@ -570,8 +572,10 @@ export const HomeScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Canjes</Text>
           
           {redemptionsLoading ? (
-            <View style={styles.redemptionLoading}>
-              <ActivityIndicator size="large" color="#4285F4" />
+            <View>
+              <RedemptionItemSkeleton />
+              <RedemptionItemSkeleton />
+              <RedemptionItemSkeleton />
             </View>
           ) : redemptions.length > 0 ? (
             <ScrollView 
@@ -673,21 +677,12 @@ export const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#ffffff',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {},
-  bannerLoading: {
-    height: 200,
-    marginHorizontal: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 16,
-    marginBottom: 16,
-  },
   bannerContainer: {
     marginBottom: 8,
   },
@@ -754,15 +749,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     color: '#6C7278',
   },
-  vehicleLoading: {
-    height: 120,
-    marginHorizontal: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 16,
-    marginBottom: 32,
-  },
   vehicleContainer: {
     marginBottom: 32,
   },
@@ -776,7 +762,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     marginRight: 12,
-    width: width - 60,
+    width: Platform.OS === 'ios' ? width - 40 : width - 60,
     minWidth: 300,
     marginTop: 20,
   },
@@ -871,13 +857,9 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     marginBottom: 10,
   },
-  couponsLoading: {
-    height: 160,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 16,
-    marginHorizontal: 0,
+  couponsContainer: {
+    flexDirection: 'row',
+    paddingLeft: 0,
   },
   couponsScroll: {
     marginHorizontal: -20,
@@ -948,11 +930,6 @@ const styles = StyleSheet.create({
     color: '#535353',
     textAlign: 'left',
     marginTop: 10,
-  },
-  redemptionLoading: {
-    height: 120,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   noRedemptionsContainer: {
     height: 120,

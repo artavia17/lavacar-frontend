@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { httpClient, ApiResponse } from '../http/HttpClient';
-import { API_ENDPOINTS } from '../../shared/config/environment';
+import { API_ENDPOINTS, config } from '../../shared/config/environment';
 
 export interface LoginRequest {
   email?: string;
@@ -41,9 +41,28 @@ export interface UserAccount {
   last_login_at: string;
 }
 
+export interface AgentAccount {
+  id: number;
+  code: string;
+  name: string;
+  description: string;
+  location: string;
+  is_active: boolean;
+  last_login_at: string;
+}
+
 export interface LoginResponse {
   token: string;
-  account: UserAccount;
+  account?: UserAccount;
+  agent?: AgentAccount;
+  stats?: {
+    total_coupon_transactions: number;
+    total_redemption_transactions: number;
+    total_transactions: number;
+    transactions_today: number;
+    transactions_this_week: number;
+    last_transaction_date: string;
+  };
 }
 
 export interface ApiError {
@@ -112,8 +131,18 @@ export class AuthService {
 
       // If login successful, save token and user data
       if (response.success && response.data) {
+        console.log('💾 Saving token:', response.data.token);
         await httpClient.saveAuthToken(response.data.token);
-        await this.saveUserData(response.data.account);
+        
+        // Handle different response structures for user vs agent
+        const userData = credentials.userType === 'agent' 
+          ? response.data.agent 
+          : response.data.account;
+          
+        console.log('💾 Saving user data:', userData?.name || userData?.email || 'unknown');
+        if (userData) {
+          await this.saveUserData(userData);
+        }
       }
 
       return response;
@@ -287,6 +316,61 @@ export class AuthService {
     }
   }
 
+  // Internal method that bypasses token expiration handling
+  private async checkUserAccountInternal(): Promise<ApiResponse<UserAccount>> {
+    try {
+      const token = await this.getCurrentToken();
+      if (!token) {
+        return { success: false, status: 401, message: 'No token' };
+      }
+
+      const response = await fetch(`${config.API_BASE_URL}${API_ENDPOINTS.USER_ACCOUNT}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      return {
+        success: response.ok,
+        data: response.ok ? data.data || data : undefined,
+        status: response.status,
+        message: data.message,
+      };
+    } catch (error) {
+      return { success: false, status: 500, message: 'Network error' };
+    }
+  }
+
+  private async checkAgentAccountInternal(): Promise<ApiResponse<UserAccount>> {
+    try {
+      const token = await this.getCurrentToken();
+      if (!token) {
+        return { success: false, status: 401, message: 'No token' };
+      }
+
+      const response = await fetch(`${config.API_BASE_URL}${API_ENDPOINTS.AGENT_ACCOUNT}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+      return {
+        success: response.ok,
+        data: response.ok ? data.data || data : undefined,
+        status: response.status,
+        message: data.message,
+      };
+    } catch (error) {
+      return { success: false, status: 500, message: 'Network error' };
+    }
+  }
+
   async checkAuthenticationStatus(): Promise<{
     isAuthenticated: boolean;
     userType: 'user' | 'agent' | null;
@@ -302,8 +386,8 @@ export class AuthService {
         };
       }
 
-      // Try to verify as user first
-      const userResponse = await this.checkUserAccount();
+      // Try to verify as user first (using internal method to avoid token clearing)
+      const userResponse = await this.checkUserAccountInternal();
       if (userResponse.success && userResponse.data) {
         // Save/update user data locally
         await this.saveUserData(userResponse.data);
@@ -314,8 +398,8 @@ export class AuthService {
         };
       }
 
-      // If user check fails, try as agent
-      const agentResponse = await this.checkAgentAccount();
+      // If user check fails, try as agent (using internal method to avoid token clearing)
+      const agentResponse = await this.checkAgentAccountInternal();
       if (agentResponse.success && agentResponse.data) {
         // Save/update agent data locally
         await this.saveUserData(agentResponse.data);

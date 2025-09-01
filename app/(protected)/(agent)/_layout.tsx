@@ -3,7 +3,7 @@ import React from 'react';
 import { Platform } from 'react-native';
 import { 
   HomeIcon, 
-  TruckIcon, 
+  ClipboardDocumentListIcon, 
   UserIcon 
 } from 'react-native-heroicons/outline';
 
@@ -30,11 +30,11 @@ export default function AgentLayout() {
           }}
         />
         <Tabs.Screen
-          name="services"
+          name="transactions"
           options={{
-            title: 'Servicios',
+            title: 'Transacciones',
             tabBarIcon: ({ color, size }) => (
-              <TruckIcon size={size} color={color} />
+              <ClipboardDocumentListIcon size={size} color={color} />
             ),
           }}
         />
