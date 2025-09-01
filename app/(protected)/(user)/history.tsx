@@ -1,3 +1,3 @@
-import { HistoryScreen } from '../../../src/presentation/screens/user/HistoryScreen';
+import { RedemptionScreen } from '../../../src/presentation/screens/user/RedemptionScreen';
 
-export default HistoryScreen;
+export default RedemptionScreen;

@@ -59,9 +59,13 @@ export const API_ENDPOINTS = {
   BANNERS: '/banners',
   
   // Coupon endpoints
+  COUPONS: '/coupons',
   RECENT_COUPONS: '/coupons/recent',
   COUPON_DETAIL: '/coupons',
   
   // Redemption endpoints
   REDEMPTIONS: '/redemptions',
+  
+  // Transaction endpoints
+  RECENT_TRANSACTIONS: '/account/transactions/recent',
 };

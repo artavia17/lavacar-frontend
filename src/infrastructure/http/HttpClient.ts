@@ -87,8 +87,8 @@ export class HttpClient {
       if (!response.ok) {
         console.log(`❌ Request failed with status ${response.status}`);
         
-        // Handle 401 Unauthorized - token expired
-        if (response.status === 401) {
+        // Handle 401 Unauthorized - only if we're making an authenticated request and it's not a login endpoint
+        if (response.status === 401 && requiresAuth && !endpoint.includes('/login')) {
           console.log('🔒 Token expired, clearing auth data and redirecting to login');
           await this.handleTokenExpiration();
         }

@@ -1,244 +1,205 @@
-import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
+  Platform,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
+  View
 } from 'react-native';
-import {
-  ArrowRightOnRectangleIcon,
-  ChevronLeftIcon,
-  CogIcon,
-  TruckIcon
-} from 'react-native-heroicons/outline';
-import QRCode from 'react-native-qrcode-svg';
-import { authService } from '../../../infrastructure/services/AuthService';
-import { UserAccount, UserVehicle, vehicleService } from '../../../infrastructure/services/VehicleService';
-import { ConfirmationModal } from '../../components/common/ConfirmationModal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Transaction, transactionService } from '../../../infrastructure/services/TransactionService';
+import { UserVehicle, vehicleService } from '../../../infrastructure/services/VehicleService';
+import { useTabScroll } from '../../contexts/TabScrollContext';
 import { useError } from '../../providers/ErrorProvider';
 
+const { width } = Dimensions.get('window');
+
 export const AccountScreen: React.FC = () => {
-  const [primaryVehicle, setPrimaryVehicle] = useState<UserVehicle | null>(null);
-  const [userAccount, setUserAccount] = useState<UserAccount | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [scrollY, setScrollY] = useState(0);
-  const [isScrolledTop, setIsScrolledTop] = useState(true);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const { setIsScrolled } = useTabScroll();
+  const insets = useSafeAreaInsets();
   const { showError } = useError();
 
-  // Debug logs for modal states
-  useEffect(() => {
-    console.log('Logout modal state:', showLogoutModal);
-  }, [showLogoutModal]);
+  const [primaryVehicle, setPrimaryVehicle] = useState<UserVehicle | null>(null);
+  const [vehicleLoading, setVehicleLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(true);
 
   useEffect(() => {
-    console.log('Delete modal state:', showDeleteModal);
-  }, [showDeleteModal]);
-
-  useEffect(() => {
-    loadAccountData();
+    loadData();
   }, []);
 
-  const loadAccountData = async () => {
-    try {
-      // Load both user account and primary vehicle in parallel
-      const [accountData, primaryVehicleData] = await Promise.all([
-        vehicleService.getUserAccount(),
-        vehicleService.getPrimaryVehicle().catch(() => null) // Allow this to fail gracefully
-      ]);
+  const loadData = async () => {
+    await Promise.all([
+      loadPrimaryVehicle(),
+      loadTransactions()
+    ]);
+  };
 
-      setUserAccount(accountData);
-      setPrimaryVehicle(primaryVehicleData);
+  const loadPrimaryVehicle = async () => {
+    try {
+      setVehicleLoading(true);
+      const vehicle = await vehicleService.getPrimaryVehicle();
+      setPrimaryVehicle(vehicle);
     } catch (error) {
-      console.error('Error loading account data:', error);
-      showError('Error', 'Error de conexión al cargar datos de la cuenta');
+      console.error('Error loading primary vehicle:', error);
+      showError('Error', 'No se pudo cargar el vehículo principal');
     } finally {
-      setLoading(false);
+      setVehicleLoading(false);
     }
   };
 
-  const handleBack = () => {
-    router.back();
-  };
-
-  const handleMyVehicles = () => {
-    router.push('/(protected)/vehicles');
-  };
-
-  const handleConfiguration = () => {
-    router.push('/(protected)/configuration');
-  };
-
-  const handleLogout = () => {
-    console.log('Opening logout modal');
-    setShowLogoutModal(true);
-  };
-
-  const handleConfirmLogout = async () => {
-    setShowLogoutModal(false);
+  const loadTransactions = async () => {
     try {
-      await authService.logout();
-      router.replace('/(auth)/login');
+      setTransactionsLoading(true);
+      const response = await transactionService.getRecentTransactions(6);
+      setTransactions(response.data);
     } catch (error) {
-      console.error('Logout error:', error);
-      showError('Error', 'Error al cerrar sesión');
+      console.error('Error loading transactions:', error);
+      showError('Error', 'No se pudieron cargar las transacciones');
+    } finally {
+      setTransactionsLoading(false);
     }
   };
 
-  const handleCancelLogout = () => {
-    setShowLogoutModal(false);
-  };
-
-  const handleDeleteAccount = () => {
-    console.log('Opening delete modal');
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = () => {
-    setShowDeleteModal(false);
-    showError('Función no disponible', 'Esta función estará disponible próximamente');
-  };
-
-  const handleCancelDelete = () => {
-    setShowDeleteModal(false);
-  };
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadData();
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
 
   const handleScroll = (event: any) => {
     const { contentOffset } = event.nativeEvent;
     const currentScrollY = contentOffset.y;
-    setScrollY(currentScrollY);
-    
-    // Check if scrolled from top
-    setIsScrolledTop(currentScrollY <= 10);
+    setIsScrolled(currentScrollY > 10);
   };
 
-  const getQRValue = () => {
-    if (primaryVehicle) {
-      return primaryVehicle.license_plate;
-    }
-    return userAccount?.id?.toString() || 'No data';
+  const formatTransactionDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 
+                   'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return `${date.getDate()} ${months[date.getMonth()]}`;
   };
+
+  const groupTransactionsByMonth = (transactions: Transaction[]) => {
+    const grouped: { [key: string]: Transaction[] } = {};
+    
+    transactions.forEach(transaction => {
+      const date = new Date(transaction.created_at);
+      const currentDate = new Date();
+      const isCurrentMonth = date.getMonth() === currentDate.getMonth() && 
+                           date.getFullYear() === currentDate.getFullYear();
+      
+      let monthKey: string;
+      if (isCurrentMonth) {
+        monthKey = 'Este mes';
+      } else {
+        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        monthKey = months[date.getMonth()];
+      }
+      
+      if (!grouped[monthKey]) {
+        grouped[monthKey] = [];
+      }
+      grouped[monthKey].push(transaction);
+    });
+    
+    return grouped;
+  };
+
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      
-      {/* Header */}
-      <View style={[
-        styles.header,
-        !isScrolledTop && styles.headerWithBorder
-      ]}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <ChevronLeftIcon size={24} color="#1A1A1A" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Cuenta</Text>
-        <View style={styles.headerRight} />
-      </View>
 
       <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={styles.content} 
+        contentContainerStyle={[
+          styles.scrollContent,
+          { 
+            paddingTop: 80 + insets.top,
+            paddingBottom: (Platform.OS === 'ios' ? 110 : 90) + insets.bottom 
+          }
+        ]}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#4285F4']}
+            tintColor="#4285F4"
+            progressViewOffset={80 + insets.top}
+          />
+        }
       >
-
-        {/* QR Code Section */}
-        <View style={styles.qrSection}>
-          {loading ? (
-            <ActivityIndicator size="large" color="#4285F4" />
+        {/* Vehicle Header */}
+        <View style={styles.vehicleHeader}>
+          {vehicleLoading ? (
+            <ActivityIndicator size="small" color="#4285F4" />
+          ) : primaryVehicle ? (
+            <>
+              <Text style={styles.vehicleTitle}>
+                {primaryVehicle.brand.name} {primaryVehicle.model.name}
+              </Text>
+              <Text style={styles.vehiclePlate}>
+                Placa: {primaryVehicle.license_plate}
+              </Text>
+            </>
           ) : (
             <>
-              <Text style={styles.userName}>
-                {userAccount?.first_name || 'Usuario'}
-              </Text>
-              <QRCode
-                value={getQRValue()}
-                size={200}
-                color="#000000"
-                backgroundColor="#FFFFFF"
-              />
+              <Text style={styles.vehicleTitle}>Sin vehículo</Text>
+              <Text style={styles.vehiclePlate}>No hay vehículo principal</Text>
             </>
           )}
         </View>
 
-        {/* Menu Options */}
-        <View style={styles.menuSection}>
-          <TouchableOpacity 
-            style={styles.menuItem} 
-            onPress={handleMyVehicles}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, styles.vehiclesIcon]}>
-                <TruckIcon size={24} color="#FFFFFF" />
-              </View>
-              <Text style={styles.menuItemText}>Mis vehículos</Text>
+
+        {/* Transactions by Month */}
+        {transactionsLoading ? (
+          <View style={styles.transactionLoading}>
+            <ActivityIndicator size="large" color="#4285F4" />
+            <Text style={styles.loadingText}>Cargando transacciones...</Text>
+          </View>
+        ) : transactions.length > 0 ? (
+          Object.entries(groupTransactionsByMonth(transactions)).map(([month, monthTransactions]) => (
+            <View key={month} style={styles.monthSection}>
+              <Text style={styles.monthTitle}>{month}</Text>
+              
+              {monthTransactions.map((transaction) => (
+                <View key={transaction.id} style={styles.transactionItem}>
+                  <View style={styles.transactionInfo}>
+                    <Text style={styles.transactionDescription}>
+                      {transaction.description}
+                    </Text>
+                    <Text style={styles.transactionDate}>
+                      {formatTransactionDate(transaction.created_at)}
+                    </Text>
+                  </View>
+                  <Text style={styles.transactionAmount}>
+                    {transaction.formatted_points} puntos
+                  </Text>
+                </View>
+              ))}
             </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.menuItem} 
-            onPress={handleConfiguration}
-            activeOpacity={0.7}
-          >
-            <View style={styles.menuItemLeft}>
-              <View style={[styles.menuIcon, styles.configIcon]}>
-                <CogIcon size={24} color="#FFFFFF" />
-              </View>
-              <Text style={styles.menuItemText}>Configuración</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Logout Button */}
-        <TouchableOpacity 
-          style={styles.logoutButton} 
-          onPress={handleLogout}
-          activeOpacity={0.8}
-        >
-          <ArrowRightOnRectangleIcon size={20} color="#4285F4" />
-          <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
-        </TouchableOpacity>
-
-        {/* Delete Account */}
-        <TouchableOpacity 
-          style={styles.deleteButton} 
-          onPress={handleDeleteAccount}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.deleteButtonText}>Eliminar cuenta</Text>
-        </TouchableOpacity>
+          ))
+        ) : (
+          <View style={styles.noTransactionsContainer}>
+            <Text style={styles.noTransactionsText}>No hay transacciones disponibles</Text>
+          </View>
+        )}
       </ScrollView>
-
-      {/* Logout Confirmation Modal */}
-      <ConfirmationModal
-        visible={showLogoutModal}
-        onConfirm={handleConfirmLogout}
-        onCancel={handleCancelLogout}
-        title="Cerrar Sesión"
-        message="¿Estás seguro que quieres cerrar sesión?"
-        confirmText="Cerrar Sesión"
-        cancelText="Cancelar"
-        type="warning"
-      />
-
-      {/* Delete Account Confirmation Modal */}
-      <ConfirmationModal
-        visible={showDeleteModal}
-        onConfirm={handleConfirmDelete}
-        onCancel={handleCancelDelete}
-        title="Eliminar Cuenta"
-        message="¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer."
-        confirmText="Eliminar"
-        cancelText="Cancelar"
-        type="danger"
-      />
     </View>
   );
 };
@@ -248,111 +209,83 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-  },
-  headerWithBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8E9EA',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#F8F9FA',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
+  content: {
     flex: 1,
-    fontSize: 20,
-    fontFamily: 'Poppins-SemiBold',
-    color: '#4285F4',
-    textAlign: 'center',
-    marginHorizontal: 16,
-  },
-  headerRight: {
-    width: 40,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
   },
-  userInfo: {
-    alignItems: 'center',
-    marginBottom: 40,
+  scrollContent: {},
+  vehicleHeader: {
+    marginBottom: 20,
   },
-  userName: {
-    fontSize: 18,
+  vehicleTitle: {
+    fontSize: 24,
     fontFamily: 'Poppins-Bold',
     color: '#1A1A1A',
+    marginBottom: 4,
   },
-  qrSection: {
-    alignItems: 'center',
-    marginBottom: 60,
-    padding: 20,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 20,
+  vehiclePlate: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Regular',
+    color: '#6C7278',
   },
-  menuSection: {
-    marginBottom: 60,
+  monthSection: {
+    marginBottom: 32,
   },
-  menuItem: {
-    marginBottom: 20,
-  },
-  menuItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  menuIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  vehiclesIcon: {
-    backgroundColor: '#4285F4',
-  },
-  configIcon: {
-    backgroundColor: '#4285F4',
-  },
-  menuItemText: {
+  monthTitle: {
     fontSize: 18,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#1A1A1A',
+    marginBottom: 16,
+  },
+  transactionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  transactionInfo: {
+    flex: 1,
+  },
+  transactionDescription: {
+    fontSize: 16,
     fontFamily: 'Poppins-Medium',
     color: '#1A1A1A',
+    marginBottom: 4,
   },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  transactionDate: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#6C7278',
+  },
+  transactionAmount: {
+    fontSize: 16,
+    fontFamily: 'Poppins-SemiBold',
+    color: '#1A1A1A',
+  },
+  transactionLoading: {
+    height: 120,
     justifyContent: 'center',
-    backgroundColor: '#F0F8FF',
-    paddingVertical: 16,
-    borderRadius: 16,
-    marginBottom: 20,
-  },
-  logoutButtonText: {
-    fontSize: 16,
-    fontFamily: 'Poppins-Medium',
-    color: '#4285F4',
-    marginLeft: 8,
-  },
-  deleteButton: {
     alignItems: 'center',
-    paddingVertical: 16,
+    marginBottom: 32,
   },
-  deleteButtonText: {
+  loadingText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#6C7278',
+    marginTop: 12,
+  },
+  noTransactionsContainer: {
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  noTransactionsText: {
     fontSize: 16,
-    fontFamily: 'Poppins-Medium',
-    color: '#FF6B6B',
+    fontFamily: 'Poppins-Regular',
+    color: '#6C7278',
+    textAlign: 'center',
   },
 });

@@ -101,13 +101,16 @@ export const EmailLoginScreen: React.FC = () => {
             undefined,
             'success'
           );
+          return; // Prevent further execution
         } else if (response.errors) {
           // Handle other validation errors from API
           const errorMessages = Object.values(response.errors).flat().join('\n');
           alert('Error de validación', errorMessages);
+          return; // Prevent further execution
         } else {
           const errorMessage = response.message || 'Credenciales incorrectas';
           alert('Error de login', errorMessage);
+          return; // Prevent further execution
         }
       }
     } catch (error) {

@@ -2,9 +2,10 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, StyleSheet } from 'react-native';
 import {
-  CalendarIcon,
-  ClockIcon,
-  HomeIcon
+  GiftIcon,
+  HomeIcon,
+  TicketIcon,
+  UserIcon
 } from 'react-native-heroicons/outline';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabHeader } from '../../../src/presentation/components/common/TabHeader';
@@ -52,18 +53,27 @@ const TabsWithSafeArea = () => {
         <Tabs.Screen
           name="booking"
           options={{
-            title: 'Solicitar',
+            title: 'Cupones',
             tabBarIcon: ({ color, size }) => (
-              <CalendarIcon size={size} color={color} />
+              <TicketIcon size={size} color={color} />
             ),
           }}
         />
         <Tabs.Screen
           name="history"
           options={{
-            title: 'Historial',
+            title: 'Canje',
             tabBarIcon: ({ color, size }) => (
-              <ClockIcon size={size} color={color} />
+              <GiftIcon size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="account"
+          options={{
+            title: 'Cuenta',
+            tabBarIcon: ({ color, size }) => (
+              <UserIcon size={size} color={color} />
             ),
           }}
         />

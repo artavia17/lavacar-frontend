@@ -12,7 +12,7 @@ import { useTabScroll } from '../../contexts/TabScrollContext';
 export const TabHeader: React.FC = () => {
   const { isScrolled } = useTabScroll();
   const handleMenuPress = () => {
-    router.push('/(protected)/account');
+    router.push('/(protected)/profile');
   };
 
   return (

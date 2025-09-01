@@ -8,6 +8,7 @@ import {
   Linking,
   PanResponder,
   Platform,
+  RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -60,6 +61,8 @@ export const HomeScreen: React.FC = () => {
   const [showRedemptionModal, setShowRedemptionModal] = useState(false);
   const [selectedRedemption, setSelectedRedemption] = useState<Redemption | null>(null);
   const [showQRRedemptionModal, setShowQRRedemptionModal] = useState(false);
+  
+  const [refreshing, setRefreshing] = useState(false);
   
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -362,6 +365,24 @@ export const HomeScreen: React.FC = () => {
     setSelectedRedemption(null);
   };
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      // Recargar todos los datos en paralelo
+      await Promise.all([
+        loadBanners(),
+        loadVehicles(),
+        loadCoupons(),
+        loadRedemptions()
+      ]);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      showError('Error', 'No se pudieron refrescar los datos');
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -379,6 +400,15 @@ export const HomeScreen: React.FC = () => {
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#4285F4']}
+            tintColor="#4285F4"
+            progressViewOffset={80 + insets.top}
+          />
+        }
       >
         {/* Banners */}
         {bannersLoading ? (

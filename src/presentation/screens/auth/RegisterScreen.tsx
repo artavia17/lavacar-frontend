@@ -101,9 +101,9 @@ export const RegisterScreen: React.FC = () => {
   const loadModels = async (brandId: number) => {
     setLoadingModels(true);
     try {
-      const response = await vehicleService.getModelsByBrand(brandId);
+      const response = await vehicleService.getModelsByBrand(brandId.toString());
       if (response.success && response.data) {
-        setModels(response.data.models);
+        setModels(response.data);
       } else {
         alert('Error', response.message || 'No se pudieron cargar los modelos de vehículos');
       }

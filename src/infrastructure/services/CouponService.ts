@@ -52,6 +52,30 @@ export interface CouponResponse {
 }
 
 class CouponServiceClass {
+  async getAllCoupons(): Promise<CouponResponse> {
+    try {
+      console.log('🎟️ Loading all coupons...');
+      
+      const response = await httpClient.get<CouponResponse>(
+        API_ENDPOINTS.COUPONS,
+        true // Requires auth
+      );
+
+      console.log('📋 All coupons response:', response);
+      
+      if (!response.success) {
+        const apiError = new Error(response.message || 'Error loading coupons');
+        (apiError as any).response = { data: response };
+        throw apiError;
+      }
+
+      return response;
+    } catch (error) {
+      console.error('❌ Error loading all coupons:', error);
+      throw error;
+    }
+  }
+
   async getRecentCoupons(): Promise<CouponResponse> {
     try {
       console.log('🎟️ Loading recent coupons...');

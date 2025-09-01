@@ -21,6 +21,13 @@ export interface RedemptionResponse {
   meta: {
     limit: number;
     total: number;
+    total_available_redemptions: number;
+    user_points: number;
+    filtered_for_vehicle: {
+      license_plate: string;
+      brand: string;
+      type: string;
+    };
   };
 }
 

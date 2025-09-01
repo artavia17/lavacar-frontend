@@ -129,7 +129,7 @@ export interface UserVehiclesResponse {
 
 class VehicleServiceClass {
 
-  async getBrands(): Promise<VehicleBrand[]> {
+  async getBrands(): Promise<ApiResponse<VehicleBrand[]>> {
     try {
       console.log('🚗 Fetching vehicle brands...');
       
@@ -138,14 +138,14 @@ class VehicleServiceClass {
       );
 
       console.log('📋 Brands response:', response);
-      return response.data || [];
+      return response;
     } catch (error) {
       console.error('❌ Error fetching brands:', error);
       throw error;
     }
   }
 
-  async getModelsByBrand(brandId: string): Promise<VehicleModel[]> {
+  async getModelsByBrand(brandId: string): Promise<ApiResponse<VehicleModel[]>> {
     try {
       console.log(`🚗 Fetching models for brand ${brandId}...`);
       
@@ -154,14 +154,19 @@ class VehicleServiceClass {
       );
 
       console.log('📋 Models response:', response);
-      return response.data?.models || [];
+      
+      // Transform the response to match the expected format
+      return {
+        ...response,
+        data: response.data?.models || []
+      };
     } catch (error) {
       console.error('❌ Error fetching models:', error);
       throw error;
     }
   }
 
-  async getVehicleTypes(): Promise<VehicleType[]> {
+  async getVehicleTypes(): Promise<ApiResponse<VehicleType[]>> {
     try {
       console.log('🚗 Fetching vehicle types...');
       
@@ -170,7 +175,7 @@ class VehicleServiceClass {
       );
 
       console.log('📋 Types response:', response);
-      return response.data || [];
+      return response;
     } catch (error) {
       console.error('❌ Error fetching vehicle types:', error);
       throw error;
