@@ -20,11 +20,13 @@ import { Banner, bannerService } from '../../../infrastructure/services/BannerSe
 import { Coupon, couponService } from '../../../infrastructure/services/CouponService';
 import { Redemption, redemptionService } from '../../../infrastructure/services/RedemptionService';
 import { UserVehicle, vehicleService } from '../../../infrastructure/services/VehicleService';
+import { Alert, alertService } from '../../../infrastructure/services/AlertService';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { CouponModal } from '../../components/common/CouponModal';
 import { NotificationPermissionModal } from '../../components/common/NotificationPermissionModal';
 import { QRRedemptionModal } from '../../components/common/QRRedemptionModal';
 import { RedemptionModal } from '../../components/common/RedemptionModal';
+import { AlertsModal } from '../../components/common/AlertsModal';
 import {
   BannerSkeleton,
   CouponCardSkeleton,
@@ -66,6 +68,10 @@ export const HomeScreen: React.FC = () => {
   const [showRedemptionModal, setShowRedemptionModal] = useState(false);
   const [selectedRedemption, setSelectedRedemption] = useState<Redemption | null>(null);
   const [showQRRedemptionModal, setShowQRRedemptionModal] = useState(false);
+  
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [showAlertsModal, setShowAlertsModal] = useState(false);
+  const [shownAlertIds, setShownAlertIds] = useState<Set<number>>(new Set());
   
   const [refreshing, setRefreshing] = useState(false);
   
@@ -156,6 +162,7 @@ export const HomeScreen: React.FC = () => {
     loadVehicles();
     loadCoupons();
     loadRedemptions();
+    loadAlerts();
   }, []);
 
   // Auto-change effect
@@ -247,6 +254,43 @@ export const HomeScreen: React.FC = () => {
       showError('Error', 'No se pudieron cargar los canjes');
     } finally {
       setRedemptionsLoading(false);
+    }
+  };
+
+  const loadAlerts = async (forceShow: boolean = true) => {
+    try {
+      console.log('🔔 Loading user alerts...');
+      const response = await alertService.getAlerts();
+      
+      if (response.success && response.data) {
+        // Based on the log, alerts are directly in response.data (which is the array)
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          console.log('✅ Alerts loaded:', response.data);
+          setAlerts(response.data);
+          
+          // Only show alerts modal if forceShow is true and there are new alerts not shown yet
+          if (forceShow) {
+            const newAlerts = response.data.filter((alert: Alert) => !shownAlertIds.has(alert.id));
+            if (newAlerts.length > 0) {
+              // Filter to show only new alerts
+              setAlerts(newAlerts);
+              setShowAlertsModal(true);
+              
+              // Mark these alerts as shown
+              const newShownIds = new Set(shownAlertIds);
+              newAlerts.forEach((alert: Alert) => newShownIds.add(alert.id));
+              setShownAlertIds(newShownIds);
+            }
+          }
+        } else {
+          console.log('ℹ️ No alerts found for user');
+        }
+      } else {
+        console.log('ℹ️ No alerts found for user');
+      }
+    } catch (error) {
+      console.error('❌ Error loading alerts:', error);
+      // Don't show error to user for alerts, just log it
     }
   };
 
@@ -370,6 +414,15 @@ export const HomeScreen: React.FC = () => {
     setSelectedRedemption(null);
   };
 
+  const handleCloseAlertsModal = () => {
+    setShowAlertsModal(false);
+  };
+
+  const handleCouponAlertPress = (couponId: number) => {
+    console.log('🎫 Navigating to coupon detail:', couponId);
+    router.push(`/coupon/${couponId}`);
+  };
+
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -378,7 +431,8 @@ export const HomeScreen: React.FC = () => {
         loadBanners(),
         loadVehicles(),
         loadCoupons(),
-        loadRedemptions()
+        loadRedemptions(),
+        loadAlerts(false)
       ]);
     } catch (error) {
       console.error('Error refreshing data:', error);
@@ -670,6 +724,14 @@ export const HomeScreen: React.FC = () => {
           vehiclePlate={primaryVehicle?.license_plate || ''}
         />
       )}
+
+      {/* Alerts Modal */}
+      <AlertsModal
+        visible={showAlertsModal}
+        onClose={handleCloseAlertsModal}
+        alerts={alerts}
+        onCouponPress={handleCouponAlertPress}
+      />
     </View>
   );
 };

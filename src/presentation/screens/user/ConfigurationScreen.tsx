@@ -25,6 +25,7 @@ import { notificationService } from '../../../infrastructure/services/Notificati
 import { NotificationPermissionModal } from '../../components/common/NotificationPermissionModal';
 import { ConfirmationModal } from '../../components/common/ConfirmationModal';
 import { useError } from '../../providers/ErrorProvider';
+import { useNotification } from '../../providers/NotificationProvider';
 
 interface ConfigurationItem {
   icon: React.ComponentType<any>;
@@ -43,6 +44,7 @@ export const ConfigurationScreen: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { showError } = useError();
+  const { scheduleTestNotification } = useNotification();
 
   const handleScroll = (event: any) => {
     const { contentOffset } = event.nativeEvent;
@@ -131,6 +133,15 @@ export const ConfigurationScreen: React.FC = () => {
     setShowDeleteModal(false);
   };
 
+  const handleTestNotification = async () => {
+    try {
+      await scheduleTestNotification();
+      showError('Éxito', 'Notificación de prueba programada', 'OK', undefined, 'success');
+    } catch (error) {
+      showError('Error', 'Error al enviar notificación de prueba');
+    }
+  };
+
   const configurationItems: ConfigurationItem[] = [
     {
       icon: BellIcon,
@@ -139,6 +150,11 @@ export const ConfigurationScreen: React.FC = () => {
       showToggle: true,
       toggleValue: notificationsEnabled,
       onToggle: handleNotificationToggle,
+    },
+    {
+      icon: BellIcon,
+      title: 'Test Notification',
+      onPress: handleTestNotification,
     },
     {
       icon: StarIcon,

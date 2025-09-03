@@ -1,4 +1,4 @@
-package com.alonso.artavia.frontend
+package com.alonso.artavia.easygift2
 
 import android.app.Application
 import android.content.res.Configuration

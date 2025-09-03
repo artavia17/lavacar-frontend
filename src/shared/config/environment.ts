@@ -71,4 +71,10 @@ export const API_ENDPOINTS = {
   AGENT_TRANSACTIONS: '/agent/transactions',
   CLAIM_COUPON: '/agent/transactions/claim-coupon',
   CLAIM_REDEMPTION: '/agent/transactions/claim-redemption',
+  
+  // Alert endpoints
+  ALERTS: '/alerts',
+  
+  // Push notification endpoints
+  PUSH_TOKEN: '/push-tokens',
 };

@@ -1,4 +1,4 @@
-package com.alonso.artavia.frontend
+package com.alonso.artavia.easygift2
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

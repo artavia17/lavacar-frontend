@@ -1,11 +1,11 @@
 import React from 'react';
 import {
+  ActivityIndicator,
+  Dimensions,
+  Modal,
   StyleSheet,
   Text,
   View,
-  Modal,
-  ActivityIndicator,
-  Dimensions,
 } from 'react-native';
 
 interface LoadingModalProps {
@@ -50,14 +50,6 @@ const styles = StyleSheet.create({
     padding: 32,
     alignItems: 'center',
     minWidth: 200,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 8,
   },
   message: {
     fontSize: 16,

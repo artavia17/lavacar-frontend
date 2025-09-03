@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
+  Animated,
   Dimensions,
+  Modal,
   Platform,
   StatusBar,
-  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { ExclamationTriangleIcon, XMarkIcon, CheckCircleIcon } from 'react-native-heroicons/outline';
+import { CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon } from 'react-native-heroicons/outline';
 
 const { width, height } = Dimensions.get('window');
 
@@ -257,14 +257,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#4285F4',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
   },
   closeButtonText: {
     fontSize: 18,

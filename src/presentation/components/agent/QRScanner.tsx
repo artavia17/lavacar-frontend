@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { XMarkIcon, CameraIcon } from 'react-native-heroicons/outline';
+import { CameraIcon, XMarkIcon } from 'react-native-heroicons/outline';
 
 const { width, height } = Dimensions.get('window');
 
@@ -217,14 +217,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     marginBottom: 16,
     width: '100%',
-    shadowColor: '#4285F4',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   permissionButtonText: {
     fontSize: 16,

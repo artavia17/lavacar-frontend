@@ -19,6 +19,7 @@ import { useNetwork } from '../src/presentation/providers/NetworkProvider';
 import { ErrorProvider } from '../src/presentation/providers/ErrorProvider';
 import { ErrorModal } from '../src/presentation/components/common/ErrorModal';
 import { useError } from '../src/presentation/providers/ErrorProvider';
+import { NotificationProvider } from '../src/presentation/providers/NotificationProvider';
 
 const AppContent: React.FC = () => {
   const colorScheme = useColorScheme();
@@ -86,7 +87,9 @@ export default function RootLayout() {
   return (
     <ErrorProvider>
       <NetworkProvider>
-        <AppContent />
+        <NotificationProvider>
+          <AppContent />
+        </NotificationProvider>
       </NetworkProvider>
     </ErrorProvider>
   );

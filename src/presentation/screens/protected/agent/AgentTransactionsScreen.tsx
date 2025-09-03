@@ -1,21 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
-  RefreshControl,
-  TouchableOpacity,
   StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import {
   CurrencyDollarIcon,
-  TicketIcon,
-  FunnelIcon,
   MagnifyingGlassIcon,
+  TicketIcon
 } from 'react-native-heroicons/outline';
-import { agentTransactionService, AgentTransaction } from '../../../../infrastructure/services/AgentTransactionService';
+import { AgentTransaction, agentTransactionService } from '../../../../infrastructure/services/AgentTransactionService';
 import { authService } from '../../../../infrastructure/services/AuthService';
 import { useAlert } from '../../../providers/ErrorProvider';
 
@@ -330,14 +329,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
   },
   transactionHeader: {
     flexDirection: 'row',
